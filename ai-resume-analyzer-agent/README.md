@@ -1,134 +1,195 @@
-# AI Resume Analyzer Agent (Local LLM – Ollama)
+# AI Resume Analyzer — Upgraded Edition
 
-AI Resume Analyzer Agent is a command-line application built using a locally deployed Large Language Model (LLM) via Ollama. The system analyzes resume text and generates structured JSON output containing skills, role suggestions, strengths, gaps, improvement plans, and ATS optimization tips.
+**AI Resume Analyzer** is an intelligent resume parsing, evaluation, and feedback system powered by a local Large Language Model (**Ollama / Llama 3**) and lightweight **NLP / ML techniques**.
 
-This project demonstrates practical GenAI engineering concepts including prompt design, structured output enforcement, JSON validation, regex-based parsing, and robust LLM response handling.
+It provides a modern **Web Dashboard** for file uploads (PDF & DOCX) alongside a fully preserved **CLI Workflow** for raw text and file analysis.
 
 ---
 
-## Project Overview
+## Architecture & Workflow
 
-The application accepts raw resume text from the user and performs structured analysis using a local LLM. The output is returned in machine-readable JSON format to ensure consistency and reliability.
-
-The system is designed to handle common LLM formatting inconsistencies by extracting and validating JSON responses safely before parsing.
+```
+[ PDF / DOCX File ]  or  [ Raw Resume Text ]
+         │                       │
+         ▼                       ▼
+ ┌───────────────┐       ┌───────────────┐
+ │ Document      │       │ CLI Input /   │
+ │ Parser        │       │ Direct Text   │
+ └───────┬───────┘       └───────┬───────┘
+         │                       │
+         └───────────┬───────────┘
+                     ▼
+         ┌───────────────────────┐
+         │ Text Preprocessing &  │
+         │ Normalization         │
+         └───────────┬───────────┘
+                     ▼
+         ┌───────────────────────┐
+         │ Resume Analysis Engine│
+         ├───────────────────────┤
+         │  • NLP/ML (TF-IDF,    │
+         │    Skill Extraction,  │
+         │    Cosine Similarity) │
+         │  • Ollama / Llama 3   │
+         │    (Structured JSON)  │
+         └───────────┬───────────┘
+                     ▼
+         ┌───────────────────────┐
+         │ Web Results Dashboard │
+         │  / CLI JSON Output    │
+         └───────────────────────┘
+```
 
 ---
 
 ## Key Features
 
-- Local LLM deployment using Ollama (no external API keys required)
-- Structured JSON output generation
-- Prompt engineering for analytical reasoning
-- Regex-based JSON extraction to handle LLM formatting variations
-- Safe JSON parsing with error handling
-- Configurable generation parameters (temperature, token limits)
-- Modular project structure
+- **Web Dashboard**: Clean, responsive, dark-mode interface built with Flask, Vanilla CSS, and modern JS. Features drag-and-drop file upload, file validation, real-time processing indicators, and interactive result visualization.
+- **Document Parsing**: Robust text extraction from `.pdf` (via PyMuPDF) and `.docx` (via python-docx) files with graceful handling of empty documents, scanned/image-only PDFs, and file corruption.
+- **Text Preprocessing**: Information-preserving normalization pipeline that fixes encoding artifacts, normalizes whitespace, cleans extraction noise, and standardizes bullet points without destroying structure.
+- **NLP & Lightweight ML**:
+  - **Skill Extraction**: Regex pattern matching against a curated vocabulary of 150+ technical skills categorized into 6 domains, complemented by optional spaCy NER entity detection.
+  - **TF-IDF Keyword Analysis**: Computes document term frequencies against generic resume benchmarks to highlight distinctive keywords.
+  - **Cosine Similarity Scoring**: Quantifies structural keyword alignment against standard software engineering profiles with transparent calculation disclosures.
+- **Enhanced LLM Analyzer**:
+  - Deep evaluation covering Profile Summary, Strengths, Weaknesses, Categorized Skills, Experience Depth, Projects Impact, Education, Certifications, Actionable Improvements, ATS Observations, and Suggested Future Roles.
+  - Multi-step JSON extraction and error recovery to guarantee valid output formatting.
+- **Preserved CLI**: Full CLI support for both direct text input (`python main.py`) and file input (`python main.py --file resume.pdf`).
 
 ---
 
 ## Project Structure
 
+```text
 ai-resume-analyzer-agent/
-
-main.py          - CLI interface and formatted output  
-analyzer.py      - LLM interaction and structured JSON enforcement  
-config.py        - Model configuration and generation parameters  
-requirements.txt  
-README.md  
-.gitignore  
+├── app.py                # Flask web server & API endpoints
+├── document_parser.py    # PDF (PyMuPDF) and DOCX (python-docx) text extraction
+├── text_preprocessor.py  # Text normalization and artifact cleaning
+├── nlp_engine.py         # Skill extraction, TF-IDF analysis & cosine similarity
+├── analyzer.py          # Ollama / Llama 3 prompt engineering & JSON validation
+├── config.py            # Global settings & environment configurations
+├── main.py              # Extended CLI interface (supports --file and raw text)
+├── requirements.txt     # Python dependencies
+├── static/
+│   ├── app.js           # Frontend interactive logic
+│   └── style.css        # Dashboard styling (dark theme & micro-animations)
+└── templates/
+    └── index.html       # Web application UI template
+```
 
 ---
 
 ## Tech Stack
 
-- Python
-- Ollama (Local LLM Runtime)
-- Llama3 or Mistral model
-- JSON parsing
-- Regex-based validation
+- **Backend**: Python 3.10+, Flask
+- **LLM Runtime**: Ollama (Llama 3 / Mistral)
+- **Document Extraction**: PyMuPDF (`fitz`), `python-docx`
+- **NLP / ML**: `scikit-learn` (TF-IDF, Cosine Similarity), `spacy`, Regex
+- **Frontend**: HTML5, Vanilla CSS3 (Custom Variables, CSS Grid/Flexbox), JavaScript (ES6+)
 
 ---
 
-## Installation
+## Installation & Setup
 
-1. Install Ollama  
-Download from:  
-https://ollama.com/download  
+### 1. Install Ollama & Pull Model
 
-Verify installation:
+Download Ollama from [ollama.com](https://ollama.com/download), verify installation, and pull your target model:
 
-ollama --version  
+```bash
+ollama --version
+ollama pull llama3
+```
 
-2. Pull the model:
+Ensure the Ollama server is running (`ollama serve`).
 
-ollama pull llama3  
+### 2. Install Python Dependencies
 
-(or use mistral if preferred)
+```bash
+pip install -r requirements.txt
+```
 
-3. Install Python dependencies:
+*(Optional)* Download the spaCy small English model for expanded entity recognition:
 
-pip install -r requirements.txt  
-
----
-
-## Run the Application
-
-python main.py  
-
-Paste your resume text.  
-When finished, type:
-
-END  
-
-The system will analyze the resume and return structured JSON output.
+```bash
+python -m spacy download en_core_web_sm
+```
 
 ---
 
-## Output Format
+## Running the Application
 
-The application returns structured JSON in the following format:
+### Option A: Web Interface (Recommended)
 
+Launch the Flask web server:
+
+```bash
+python app.py
+```
+
+Open your browser and navigate to `http://127.0.0.1:5000`. Drag & drop a PDF or DOCX resume to view the interactive dashboard.
+
+### Option B: Command Line Interface (CLI)
+
+**File Mode (PDF / DOCX):**
+
+```bash
+python main.py --file path/to/resume.pdf
+```
+
+**Interactive Paste Mode:**
+
+```bash
+python main.py
+```
+
+Paste your resume text into the terminal, then type `END` on a new line.
+
+---
+
+## Output JSON Schema
+
+The analyzer returns a structured JSON payload:
+
+```json
 {
-  "skills": [],
-  "roles": [],
-  "strengths": [],
-  "gaps": [],
-  "improvement_plan": [],
-  "ats_tips": []
+  "summary": "Concise profile description...",
+  "strengths": ["Item 1", "Item 2"],
+  "weaknesses": ["Item 1", "Item 2"],
+  "skills": {
+    "programming_languages": [],
+    "frameworks_libraries": [],
+    "databases": [],
+    "cloud_devops": [],
+    "ai_ml": [],
+    "tools": [],
+    "other": []
+  },
+  "experience_analysis": {
+    "relevance": "...",
+    "clarity": "...",
+    "impact": "...",
+    "technical_depth": "...",
+    "measurable_achievements": "..."
+  },
+  "projects_analysis": {
+    "technical_relevance": "...",
+    "technologies_used": [],
+    "clarity": "...",
+    "measurable_impact": "...",
+    "engineering_ability": "..."
+  },
+  "education": "...",
+  "certifications": [],
+  "improvement_suggestions": [],
+  "ats_observations": [],
+  "suggested_roles": []
 }
-
-Each field contains a list of concise strings to ensure machine-readable and automation-ready output.
-
----
-
-## Engineering Considerations
-
-- Local LLM deployment demonstrates understanding of model runtime management without relying on cloud APIs.
-- Strict JSON output enforcement ensures structured results.
-- Regex extraction is used to handle cases where the LLM includes extra text outside JSON.
-- Temperature tuning balances reasoning depth and output consistency.
-- Modular architecture separates configuration, logic, and interface layers.
+```
 
 ---
 
-## Possible Extensions
+## Author & License
 
-- Resume scoring system (0–100 evaluation)
-- PDF resume upload support
-- FastAPI backend version
-- Web-based interface
-- Multi-resume comparison system
-
----
-
-## Author
-
-Sai Madhava  
-Computer Science and Artificial Intelligence  
-Backend and GenAI-focused engineering projects
-
----
-
-## License
-
-For educational and demonstration purposes.
+- **Author**: Sai Madhava
+- **Focus**: AI Engineering, NLP & Full-Stack Systems
+- **License**: Educational & Demonstration Purposes
